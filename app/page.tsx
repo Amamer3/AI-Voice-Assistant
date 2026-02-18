@@ -20,7 +20,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans text-slate-900 overflow-x-hidden relative">
       {/* Premium background effects */}
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(124,58,237,0.03),transparent_50%)] pointer-events-none" />
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(254,101,93,0.06),transparent_50%)] pointer-events-none" />
       <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-noiz-primary/5 blur-[120px] rounded-full pointer-events-none" />
       <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-noiz-secondary/5 blur-[120px] rounded-full pointer-events-none" />
 

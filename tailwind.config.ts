@@ -12,17 +12,17 @@ const config: Config = {
     extend: {
       colors: {
         noiz: {
-          black: '#000000',
-          dark: '#0A0A0A',
+          black: '#0B0528',
+          dark: '#0B0528',
           gray: {
-            900: '#111111',
+            900: '#0B0528',
             800: '#1A1A1A',
             700: '#2A2A2A',
             400: '#A1A1AA',
           },
-          primary: '#7C3AED', // Vibrant Violet
-          secondary: '#F97316', // Vibrant Orange
-          accent: '#06B6D4', // Vibrant Cyan
+          primary: '#FE655D',
+          secondary: '#B5E1FA',
+          accent: '#FF7875',
         },
         peeper: {
           slate: {
