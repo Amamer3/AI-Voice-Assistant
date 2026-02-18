@@ -29,34 +29,13 @@ interface KnowledgeItem {
 
 export default function KnowledgeBase({ sessionId }: KnowledgeBaseProps) {
   const [items, setItems] = useState<KnowledgeItem[]>([])
-  const [voiceOutputs, setVoiceOutputs] = useState<VoiceOutputItem[]>([
-    {
-      id: '1',
-      type: 'email',
-      title: 'Q3 Budget Follow-up',
-      preview: 'Hi Marketing Team, I hope you\'re having a productive week. I\'m reaching out to request...',
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-    },
-    {
-      id: '2',
-      type: 'meeting_notes',
-      title: 'Project Alpha Sync',
-      preview: 'Key Discussion Points: Finalize Q3 budget figures by Friday, Prepare for Monday\'s...',
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-    {
-      id: '3',
-      type: 'message',
-      title: 'Slack Update: Brand Guidelines',
-      preview: 'Hey team! Just a quick reminder about the Q3 budget. We need those final numbers...',
-      createdAt: new Date(Date.now() - 172800000).toISOString(),
-    }
-  ])
+  const [voiceOutputs, setVoiceOutputs] = useState<VoiceOutputItem[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<KnowledgeItem[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -87,7 +66,7 @@ export default function KnowledgeBase({ sessionId }: KnowledgeBaseProps) {
       ])
     } catch (error) {
       console.error('Error uploading file:', error)
-      alert('Failed to upload file')
+      setErrorMessage('Failed to upload file. Please try again.')
     } finally {
       setIsUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -106,7 +85,7 @@ export default function KnowledgeBase({ sessionId }: KnowledgeBaseProps) {
       setItems((prev) => prev.filter((item) => item.id !== id))
     } catch (error) {
       console.error('Error deleting item:', error)
-      alert('Failed to delete item')
+      setErrorMessage('Failed to delete item. Please refresh and try again.')
     }
   }
 
@@ -135,6 +114,18 @@ export default function KnowledgeBase({ sessionId }: KnowledgeBaseProps) {
 
   return (
     <div className="max-w-5xl lg:max-w-7xl 2xl:max-w-[1600px] mx-auto space-y-8 px-4 py-8 lg:py-12">
+      {errorMessage && (
+        <div className="mb-4 rounded-2xl bg-red-50 border border-red-100 text-red-700 text-sm px-4 py-3 flex items-start justify-between gap-3">
+          <span className="flex-1">{errorMessage}</span>
+          <button
+            type="button"
+            onClick={() => setErrorMessage('')}
+            className="ml-2 text-red-400 hover:text-red-600"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-2xl md:text-3xl 2xl:text-4xl font-black text-slate-900 tracking-tight">Library</h1>
@@ -209,12 +200,12 @@ export default function KnowledgeBase({ sessionId }: KnowledgeBaseProps) {
               </Card>
             ))}
             
-            <button className="h-full min-h-[250px] md:min-h-[320px] border-2 border-dashed border-slate-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 group hover:border-noiz-primary/30 hover:bg-slate-50 transition-all">
+            <a href="/recorder" className="h-full min-h-[250px] md:min-h-[320px] border-2 border-dashed border-slate-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 group hover:border-noiz-primary/30 hover:bg-slate-50 transition-all">
               <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-noiz-primary/10 transition-all">
                 <Plus className="w-8 h-8 md:w-10 md:h-10 text-slate-400 group-hover:text-noiz-primary" />
               </div>
-              <span className="text-base md:text-lg font-bold text-slate-400 group-hover:text-noiz-primary">New Recording</span>
-            </button>
+              <span className="text-base md:text-lg font-bold text-slate-400 group-hover:text-noiz-primary">Create from Recorder</span>
+            </a>
           </div>
         </TabsContent>
 

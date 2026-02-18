@@ -40,6 +40,10 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
   const [realtimeTranscript, setRealtimeTranscript] = useState('')
   const [selectedOutputType, setSelectedOutputType] = useState<OutputType>(null)
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false)
+  const [finalTranscript, setFinalTranscript] = useState('')
+  const [generatedOutput, setGeneratedOutput] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
+  const liveRequestInFlightRef = useRef(false)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -67,6 +71,10 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
 
   const startRecording = async () => {
     try {
+      setFinalTranscript('')
+      setGeneratedOutput('')
+      setRealtimeTranscript('')
+      setErrorMessage('')
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
       
@@ -81,9 +89,10 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
       
       mediaRecorder.ondataavailable = (e) => {
         chunksRef.current.push(e.data)
+        handleLiveChunk(e.data)
       }
       
-      mediaRecorder.start()
+      mediaRecorder.start(1000)
       setIsRecording(true)
       setIsPaused(false)
       setDuration(0)
@@ -96,6 +105,42 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
     } catch (error) {
       console.error('Error accessing microphone:', error)
       alert('Could not access microphone. Please check permissions.')
+    }
+  }
+
+  const handleLiveChunk = async (chunk: Blob) => {
+    if (!isRecording || isPaused) return
+    if (liveRequestInFlightRef.current) return
+
+    liveRequestInFlightRef.current = true
+    try {
+      const formData = new FormData()
+      formData.append('audio', chunk, 'live-chunk.webm')
+      formData.append('sessionId', sessionId)
+
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        console.error('Live transcription request failed with status', response.status)
+        return
+      }
+
+      const data = await response.json()
+      const newText = (data.transcript as string) || ''
+      if (!newText) return
+
+      setRealtimeTranscript((prev) => {
+        if (!prev) return newText
+        const combined = `${prev} ${newText}`.replace(/\s+/g, ' ').trim()
+        return combined
+      })
+    } catch (error) {
+      console.error('Error during live transcription:', error)
+    } finally {
+      liveRequestInFlightRef.current = false
     }
   }
 
@@ -132,6 +177,41 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
     setIsPaused(false)
     setCurrentStep('idle')
     setActiveRecording(null)
+    setFinalTranscript('')
+    setGeneratedOutput('')
+    setRealtimeTranscript('')
+    setErrorMessage('')
+  }
+
+  const processRecording = async (blob: Blob) => {
+    setIsProcessing(true)
+    try {
+      const formData = new FormData()
+      formData.append('audio', blob, 'recording.webm')
+      formData.append('sessionId', sessionId)
+
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error('Transcription failed')
+      }
+
+      const data = await response.json()
+      const transcriptText = data.transcript || ''
+      setFinalTranscript(transcriptText)
+      setRealtimeTranscript(transcriptText)
+    } catch (error) {
+      console.error('Error during transcription:', error)
+      setErrorMessage('Failed to transcribe your recording. You can still type or paste your text manually.')
+      setFinalTranscript('')
+      setRealtimeTranscript('')
+    } finally {
+      setIsProcessing(false)
+      setCurrentStep('review')
+    }
   }
 
   const stopRecording = () => {
@@ -139,15 +219,9 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
       mediaRecorderRef.current.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
         if (activeRecording) {
-          const finalRecording = { ...activeRecording, blob, duration, transcript: "Transcription processing..." }
+          const finalRecording = { ...activeRecording, blob, duration }
           setRecordings(prev => [...prev, finalRecording])
-          
-          // Simulate transcription processing
-          setIsProcessing(true)
-          setTimeout(() => {
-            setIsProcessing(false)
-            setCurrentStep('review')
-          }, 1500)
+          processRecording(blob)
         }
         chunksRef.current = []
       }
@@ -161,13 +235,86 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
     setIsPaused(false)
   }
 
-  const handleOutputSelection = (type: OutputType) => {
+  const handleOutputSelection = async (type: OutputType) => {
+    if (!finalTranscript && !realtimeTranscript) {
+      setErrorMessage('No transcript available. Record or paste some text before generating an output.')
+      return
+    }
+
     setSelectedOutputType(type)
     setIsProcessing(true)
-    setTimeout(() => {
-      setIsProcessing(false)
+
+    try {
+      const baseTranscript = finalTranscript || realtimeTranscript
+      const label =
+        type === 'email'
+          ? 'email'
+          : type === 'meeting_notes'
+          ? 'meeting notes'
+          : 'message'
+
+      const messages = [
+        {
+          role: 'user',
+          content: `Convert the following voice note transcript into polished ${label}.\n\nTranscript:\n${baseTranscript}\n\nReturn only the final ${label} text.`,
+        },
+      ]
+
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messages }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate output')
+      }
+
+      const data = await response.json()
+      setGeneratedOutput(data.response || '')
       setCurrentStep('final_review')
-    }, 2000)
+    } catch (error) {
+      console.error('Error generating output:', error)
+      setErrorMessage('Failed to generate output from your transcript. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const handleSaveToLibrary = async () => {
+    if (!generatedOutput) {
+      setErrorMessage('Generate an output first before saving to your library.')
+      return
+    }
+
+    setIsProcessing(true)
+    try {
+      const baseName = selectedOutputType ? selectedOutputType.replace('_', '-') : 'voice-output'
+      const blob = new Blob([generatedOutput], { type: 'text/plain' })
+      const file = new File([blob], `${baseName}-${Date.now()}.txt`, { type: 'text/plain' })
+
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('sessionId', sessionId)
+
+      const response = await fetch('/api/knowledge/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save')
+      }
+
+      setErrorMessage('')
+    } catch (error) {
+      console.error('Error saving to library:', error)
+      setErrorMessage('Failed to save to library. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   const formatTime = (seconds: number) => {
@@ -178,6 +325,18 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
 
   return (
     <div className="max-w-md md:max-w-xl lg:max-w-2xl mx-auto min-h-[600px] flex flex-col pb-20 relative">
+      {errorMessage && (
+        <div className="mb-4 rounded-2xl bg-red-50 border border-red-100 text-red-700 text-sm px-4 py-3 flex items-start justify-between gap-3">
+          <span className="flex-1">{errorMessage}</span>
+          <button
+            type="button"
+            onClick={() => setErrorMessage('')}
+            className="ml-2 text-red-400 hover:text-red-600"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       {/* Processing State Overlay */}
       {isProcessing && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/90 backdrop-blur-md animate-in fade-in duration-300 rounded-[2.5rem]">
@@ -276,10 +435,9 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
                     <span className="inline-block w-1.5 h-6 md:w-2 md:h-8 bg-noiz-primary ml-1 align-middle opacity-75 animate-pulse"></span>
                   </p>
                 ) : (
-                  <>
-                    <p className="text-slate-400 text-lg md:text-2xl leading-relaxed italic">...transforming voice notes into professional outputs...</p>
-                    <p className="text-slate-600 text-lg md:text-2xl leading-relaxed">Your thoughts are being captured and transcribed in real-time. Feel free to speak naturally...</p>
-                  </>
+                  <p className="text-slate-400 text-base md:text-lg leading-relaxed">
+                    Start speaking and your live transcript will appear here.
+                  </p>
                 )}
               </div>
             </div>
@@ -337,10 +495,12 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
             <h2 className="text-2xl md:text-4xl font-black text-slate-900">Review Transcript</h2>
             
             <div className="flex-1 bg-slate-50 rounded-2xl md:rounded-[2rem] p-6 md:p-10 border border-slate-100 overflow-y-auto">
-              <textarea 
-                className="w-full h-full bg-transparent border-none focus:ring-0 text-slate-700 leading-relaxed resize-none text-base md:text-xl"
-                defaultValue="I need to send a follow up email to the marketing team regarding the Q3 budget. Please make sure to emphasize that we need the final numbers by Friday so we can prepare for the executive board meeting on Monday. Also, remind them about the new brand guidelines for the social media campaign."
-              />
+                  <textarea 
+                    className="w-full h-full bg-transparent border-none focus:ring-0 text-slate-700 leading-relaxed resize-none text-base md:text-xl"
+                    value={finalTranscript}
+                    onChange={(e) => setFinalTranscript(e.target.value)}
+                    placeholder="Your transcript will appear here. You can edit it before generating an output."
+                  />
             </div>
 
             <div className="flex gap-4">
@@ -402,7 +562,7 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
               {isTranscriptOpen && (
                 <div className="mt-2 p-6 bg-slate-50/50 border border-slate-100 rounded-2xl animate-in slide-in-from-top-2 duration-200">
                   <p className="text-slate-600 text-sm md:text-base leading-relaxed">
-                    {realtimeTranscript || "I need to send a follow up email to the marketing team regarding the Q3 budget. Please make sure to emphasize that we need the final numbers by Friday so we can prepare for the executive board meeting on Monday. Also, remind them about the new brand guidelines for the social media campaign."}
+                    {finalTranscript || realtimeTranscript || 'No transcript available yet.'}
                   </p>
                 </div>
               )}
@@ -447,22 +607,15 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
             </div>
 
             <div className="flex-1 bg-slate-50 rounded-[2rem] p-8 md:p-10 border border-slate-100 overflow-y-auto space-y-6">
-              <div className="space-y-4">
-                <p className="text-noiz-primary font-bold md:text-2xl">Subject: Q3 Budget Follow-up & Executive Board Prep</p>
-                <div className="h-px bg-slate-200 w-full"></div>
-                <div className="text-slate-600 space-y-4 md:text-xl leading-relaxed">
-                  <p>Hi Marketing Team,</p>
-                  <p>I wanted to quickly follow up on our discussion regarding the Q3 budget planning. To ensure we're fully prepared for the upcoming executive board meeting on Monday, could you please provide the final numbers by this Friday?</p>
-                  <p>Key areas to focus on:</p>
-                  <ul className="list-disc pl-5 space-y-2">
-                    <li>Finalized Q3 budget allocations</li>
-                    <li>Marketing spend projections</li>
-                    <li>New brand guidelines for the social media campaign</li>
-                  </ul>
-                  <p>Thanks for your hard work on this!</p>
-                  <p>Best regards,<br/>VoiceFlow Assistant</p>
+              {generatedOutput ? (
+                <div className="text-slate-600 space-y-4 text-sm md:text-base leading-relaxed whitespace-pre-wrap">
+                  {generatedOutput}
                 </div>
-              </div>
+              ) : (
+                <p className="text-slate-400 text-sm md:text-base">
+                  No output generated yet.
+                </p>
+              )}
             </div>
 
             <div className="flex gap-4">
@@ -470,7 +623,7 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
                 <ArrowLeft className="w-4 h-4 md:w-6 md:h-6" />
                 Back
               </Button>
-              <Button className="flex-1 h-12 md:h-16 gap-2 bg-noiz-primary text-white hover:bg-noiz-primary/90 md:text-lg rounded-xl md:rounded-2xl shadow-lg shadow-noiz-primary/25">
+              <Button onClick={handleSaveToLibrary} className="flex-1 h-12 md:h-16 gap-2 bg-noiz-primary text-white hover:bg-noiz-primary/90 md:text-lg rounded-xl md:rounded-2xl shadow-lg shadow-noiz-primary/25">
                 <Download className="w-4 h-4 md:w-6 md:h-6" />
                 Save to Library
               </Button>

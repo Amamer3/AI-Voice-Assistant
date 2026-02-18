@@ -3,12 +3,6 @@
 import Link from 'next/link'
 import { 
   Mic, 
-  Search, 
-  Mail, 
-  Users, 
-  MessageSquare, 
-  Copy, 
-  Share2,
   Home,
   BookOpen,
   BarChart3,
@@ -23,33 +17,6 @@ import { useSession } from '@/hooks/use-session'
 
 export default function HomePage() {
   const { sessionId } = useSession()
-
-  const recentOutputs = [
-    {
-      id: '1',
-      title: 'Client Follow-up Email',
-      time: '2 mins ago',
-      type: 'email',
-      icon: <Mail className="w-5 h-5 text-noiz-primary" />,
-      color: 'bg-noiz-primary/10'
-    },
-    {
-      id: '2',
-      title: 'Team Weekly Sync Minutes',
-      time: '1 hour ago',
-      type: 'meeting_notes',
-      icon: <Users className="w-5 h-5 text-noiz-secondary" />,
-      color: 'bg-noiz-secondary/10'
-    },
-    {
-      id: '3',
-      title: 'Slack Update: Project Nova',
-      time: '4 hours ago',
-      type: 'message',
-      icon: <MessageSquare className="w-5 h-5 text-noiz-accent" />,
-      color: 'bg-noiz-accent/10'
-    }
-  ]
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans text-slate-900 overflow-x-hidden relative">
@@ -197,24 +164,18 @@ export default function HomePage() {
               <h3 className="text-sm font-bold tracking-[0.28em] uppercase text-slate-400">Recent Activity</h3>
             </div>
             <Card className="bg-white border-slate-100 shadow-lg shadow-slate-200/40 p-4 md:p-6 rounded-3xl">
-              <div className="space-y-2">
-                {recentOutputs.map((item) => (
-                  <button
-                    key={item.id}
-                    className="w-full flex items-center justify-between px-3 py-3 md:px-4 md:py-3 rounded-2xl hover:bg-slate-50 transition-colors text-left"
+              <div className="space-y-3">
+                <p className="text-sm md:text-base text-slate-500">
+                  No recent activity yet. Start a recording to see your outputs here.
+                </p>
+                <Link href="/recorder">
+                  <Button
+                    variant="outline"
+                    className="mt-1 h-10 md:h-11 px-4 rounded-full border-slate-200 text-sm font-semibold text-slate-700 hover:text-noiz-primary hover:border-noiz-primary/40"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 md:w-10 md:h-10 rounded-2xl flex items-center justify-center ${item.color}`}>
-                        {item.icon}
-                      </div>
-                      <div>
-                        <p className="text-sm md:text-base font-semibold text-slate-900">{item.title}</p>
-                        <p className="text-xs text-slate-400">{item.time}</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-300" />
-                  </button>
-                ))}
+                    Start your first recording
+                  </Button>
+                </Link>
               </div>
             </Card>
           </div>
