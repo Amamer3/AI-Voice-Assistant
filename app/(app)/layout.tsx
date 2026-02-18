@@ -1,13 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Mic, BookOpen, Loader2, LayoutGrid, Sparkles } from 'lucide-react'
+import { Mic, BookOpen, Loader2, LayoutGrid } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import AIAssistant from '@/components/AIAssistant'
 import { useSession } from '@/hooks/use-session'
-
 export default function AppLayout({
   children,
 }: {
@@ -15,7 +12,6 @@ export default function AppLayout({
 }) {
   const pathname = usePathname()
   const { sessionId, isLoading } = useSession()
-  const [aiMessages, setAiMessages] = useState<Array<{ role: string; content: string }>>([])
 
   if (isLoading) {
     return (
@@ -82,7 +78,6 @@ export default function AppLayout({
         <main className="flex-1 overflow-auto bg-transparent">
           {children}
         </main>
-        <AIAssistant messages={aiMessages} setMessages={setAiMessages} />
       </div>
     </div>
   )
