@@ -43,8 +43,13 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
   const [finalTranscript, setFinalTranscript] = useState('')
   const [generatedOutput, setGeneratedOutput] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+  const [recipientName, setRecipientName] = useState('')
+  const [recipientEmail, setRecipientEmail] = useState('')
+  const [emailSubject, setEmailSubject] = useState('')
   const liveRequestInFlightRef = useRef(false)
   const lastLiveRequestRef = useRef(0)
+  const liveErrorRef = useRef(false)
+  const speechRecognitionRef = useRef<any>(null)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -76,6 +81,8 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
       setGeneratedOutput('')
       setRealtimeTranscript('')
       setErrorMessage('')
+      liveErrorRef.current = false
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
       
@@ -99,6 +106,40 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
       setDuration(0)
       setCurrentStep('recording')
       setActiveRecording({ id: Date.now().toString(), blob: null, duration: 0, bookmarks: [] })
+
+      const SpeechRecognition =
+        typeof window !== 'undefined'
+          ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+          : null
+
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition()
+        recognition.continuous = true
+        recognition.interimResults = true
+        recognition.lang = 'en-US'
+
+        recognition.onresult = (event: any) => {
+          let combined = ''
+          for (let i = 0; i < event.results.length; i++) {
+            combined += event.results[i][0].transcript + ' '
+          }
+          const text = combined.replace(/\s+/g, ' ').trim()
+          if (text) {
+            setRealtimeTranscript(text)
+          }
+        }
+
+        recognition.onerror = () => {
+          speechRecognitionRef.current = null
+        }
+
+        try {
+          recognition.start()
+          speechRecognitionRef.current = recognition
+        } catch {
+          speechRecognitionRef.current = null
+        }
+      }
       
       timerRef.current = setInterval(() => {
         setDuration((d) => d + 1)
@@ -111,8 +152,9 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
 
   const handleLiveChunk = async (_chunk: Blob) => {
     if (!isRecording || isPaused) return
+    if (liveErrorRef.current) return
     const now = Date.now()
-    if (now - lastLiveRequestRef.current < 4000) return
+    if (now - lastLiveRequestRef.current < 2500) return
     if (liveRequestInFlightRef.current) return
 
     const availableChunks = [...chunksRef.current]
@@ -134,6 +176,8 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
 
       if (!response.ok) {
         console.error('Live transcription request failed with status', response.status)
+        liveErrorRef.current = true
+        setErrorMessage('Live transcription is unavailable right now. You can still finish recording and get a full transcript.')
         return
       }
 
@@ -152,6 +196,8 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
       })
     } catch (error) {
       console.error('Error during live transcription:', error)
+      liveErrorRef.current = true
+      setErrorMessage('Live transcription failed. You can still finish recording and we will transcribe once.')
     } finally {
       liveRequestInFlightRef.current = false
     }
@@ -185,6 +231,10 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
   const cancelRecording = () => {
     if (mediaRecorderRef.current) mediaRecorderRef.current.stop()
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop())
+    if (speechRecognitionRef.current) {
+      speechRecognitionRef.current.stop()
+      speechRecognitionRef.current = null
+    }
     if (timerRef.current) clearInterval(timerRef.current)
     setIsRecording(false)
     setIsPaused(false)
@@ -242,6 +292,10 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
     }
     
     if (streamRef.current) streamRef.current.getTracks().forEach((track) => track.stop())
+    if (speechRecognitionRef.current) {
+      speechRecognitionRef.current.stop()
+      speechRecognitionRef.current = null
+    }
     if (timerRef.current) clearInterval(timerRef.current)
     
     setIsRecording(false)
@@ -252,6 +306,20 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
     if (!finalTranscript && !realtimeTranscript) {
       setErrorMessage('No transcript available. Record or paste some text before generating an output.')
       return
+    }
+
+    if (type === 'email') {
+      const name = recipientName.trim()
+      const email = recipientEmail.trim()
+      if (!name || !email) {
+        setErrorMessage('Enter recipient name and email before generating the email.')
+        return
+      }
+      const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+      if (!emailPattern.test(email)) {
+        setErrorMessage('Enter a valid recipient email address.')
+        return
+      }
     }
 
     setSelectedOutputType(type)
@@ -265,11 +333,18 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
           : type === 'meeting_notes'
           ? 'meeting notes'
           : 'message'
+      const name = recipientName.trim()
+      const email = recipientEmail.trim()
+
+      const recipientInstruction =
+        type === 'email' && name && email
+          ? `The email is addressed to ${name} at ${email}. Use an appropriate greeting using their name. `
+          : ''
 
       const messages = [
         {
           role: 'user',
-          content: `Convert the following voice note transcript into polished ${label}.\n\nTranscript:\n${baseTranscript}\n\nReturn only the final ${label} text.`,
+          content: `Convert the following voice note transcript into polished ${label}. ${recipientInstruction}\n\nTranscript:\n${baseTranscript}\n\nReturn only the final ${label} text.`,
         },
       ]
 
@@ -328,6 +403,38 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
     } finally {
       setIsProcessing(false)
     }
+  }
+
+  const handleSendEmail = () => {
+    if (selectedOutputType !== 'email') {
+      setErrorMessage('You can only send emails from an email output.')
+      return
+    }
+    if (!generatedOutput) {
+      setErrorMessage('Generate the email content before sending.')
+      return
+    }
+    const email = recipientEmail.trim()
+    const name = recipientName.trim()
+    if (!email) {
+      setErrorMessage('Recipient email is missing.')
+      return
+    }
+    const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+    if (!emailPattern.test(email)) {
+      setErrorMessage('Enter a valid recipient email address.')
+      return
+    }
+
+    const subject = emailSubject.trim() || 'Draft email from VoiceFlow'
+    const greetingName = name || ''
+    const body = generatedOutput
+
+    const mailtoUrl = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(body)}`
+
+    window.location.href = mailtoUrl
   }
 
   const formatTime = (seconds: number) => {
@@ -581,7 +688,6 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
               )}
             </div>
 
-            {/* Output Type Cards */}
             <div className="grid grid-cols-1 gap-4">
               {[
                 { id: 'email', title: 'Email Draft', desc: 'Professional structure with subject line and formal greeting.', icon: Mail, color: 'text-noiz-primary', bg: 'bg-noiz-primary/10' },
@@ -599,6 +705,24 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
                   <div className="flex-1">
                     <h3 className="text-lg md:text-2xl font-black text-slate-900 mb-1">{item.title}</h3>
                     <p className="text-slate-500 text-sm md:text-base font-medium leading-relaxed">{item.desc}</p>
+                    {item.id === 'email' && (
+                      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          placeholder="Recipient name"
+                          value={recipientName}
+                          onChange={(e) => setRecipientName(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm md:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-noiz-primary/20"
+                        />
+                        <input
+                          type="email"
+                          placeholder="Recipient email"
+                          value={recipientEmail}
+                          onChange={(e) => setRecipientEmail(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm md:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-noiz-primary/20"
+                        />
+                      </div>
+                    )}
                   </div>
                   <ChevronRight className="w-5 h-5 md:w-8 md:h-8 text-slate-300 group-hover:text-noiz-primary group-hover:translate-x-1 transition-all" />
                 </button>
@@ -618,6 +742,29 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
                 {selectedOutputType?.replace('_', ' ')}
               </Badge>
             </div>
+
+            {selectedOutputType === 'email' && (
+              <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6">
+                <div className="flex-1 space-y-2">
+                  <p className="text-xs md:text-sm font-medium text-slate-500">
+                    To: {recipientName || 'Recipient'} {recipientEmail && `<${recipientEmail}>`}
+                  </p>
+                  <input
+                    type="text"
+                    placeholder="Email subject"
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm md:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-noiz-primary/20"
+                  />
+                </div>
+                <Button
+                  onClick={handleSendEmail}
+                  className="h-11 md:h-12 px-5 md:px-6 bg-noiz-primary text-white hover:bg-noiz-primary/90 rounded-xl md:rounded-2xl font-bold whitespace-nowrap"
+                >
+                  Send Email
+                </Button>
+              </div>
+            )}
 
             <div className="flex-1 bg-slate-50 rounded-[2rem] p-8 md:p-10 border border-slate-100 overflow-y-auto space-y-6">
               {generatedOutput ? (

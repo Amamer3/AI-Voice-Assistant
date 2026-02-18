@@ -15,9 +15,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Convert file to base64 for OpenAI API
-    const buffer = await audioFile.arrayBuffer()
-    const base64 = Buffer.from(buffer).toString('base64')
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('Missing OPENAI_API_KEY for transcription')
+      return NextResponse.json(
+        { error: 'Transcription is not configured on the server (missing OPENAI_API_KEY).' },
+        { status: 500 }
+      )
+    }
 
     // Use OpenAI's Whisper API for transcription
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {

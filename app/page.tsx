@@ -6,7 +6,6 @@ import {
   Home,
   BookOpen,
   BarChart3,
-  Settings,
   ChevronRight,
   LayoutGrid,
   User
