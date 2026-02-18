@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Select Output Type - VoiceFlow AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                        "surface-dark": "#1a2e20",
+                        "card-dark": "#1e3a26",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .ios-blur {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display">
+<!-- Header / Progress Bar -->
+<header class="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 ios-blur px-6 pt-12 pb-4">
+<div class="flex items-center justify-between mb-6">
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-200 dark:bg-primary/10 text-slate-700 dark:text-primary">
+<span class="material-icons-round">arrow_back_ios_new</span>
+</button>
+<div class="flex-1 px-8">
+<div class="h-1.5 w-full bg-slate-200 dark:bg-primary/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-2/3 rounded-full"></div>
+</div>
+</div>
+<button class="text-slate-500 dark:text-slate-400 font-semibold">Cancel</button>
+</div>
+<h1 class="text-2xl font-800 tracking-tight">Select Output</h1>
+</header>
+<main class="flex-1 px-6 pb-32">
+<!-- Collapsible Transcript Section -->
+<section class="mt-4 mb-8">
+<details class="group bg-slate-100 dark:bg-surface-dark rounded-xl overflow-hidden border border-slate-200 dark:border-primary/5">
+<summary class="flex items-center justify-between p-4 cursor-pointer list-none">
+<div class="flex items-center gap-3">
+<span class="material-icons-round text-primary">description</span>
+<span class="font-bold text-sm uppercase tracking-wider opacity-70">Raw Transcript</span>
+</div>
+<span class="material-icons-round transition-transform group-open:rotate-180">expand_more</span>
+</summary>
+<div class="px-4 pb-4">
+<div class="p-4 bg-white/50 dark:bg-black/20 rounded-lg text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                        "Alright, so for the project Alpha update, we need to make sure the front-end team finishes the user profile section by Friday. Also, let's schedule a follow-up with the client on Monday morning at 10 AM to discuss the feedback we received yesterday about the color palette..."
+                    </div>
+</div>
+</details>
+</section>
+<!-- Selection Options -->
+<div class="space-y-4">
+<h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60 px-1">Choose AI Transformation</h2>
+<!-- Email Card -->
+<label class="relative block cursor-pointer group">
+<input class="peer sr-only" name="output_type" type="radio" value="email"/>
+<div class="p-5 rounded-xl border-2 border-slate-200 dark:border-white/5 bg-white dark:bg-surface-dark transition-all duration-200 group-hover:bg-slate-50 dark:group-hover:bg-card-dark/50 peer-checked:border-primary peer-checked:bg-primary/5 dark:peer-checked:bg-primary/10 shadow-sm">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 flex items-center justify-center rounded-lg bg-blue-500/10 text-blue-500 group-hover:scale-110 transition-transform">
+<span class="material-icons-round text-3xl">email</span>
+</div>
+<div class="flex-1">
+<h3 class="font-bold text-lg mb-1">Email Draft</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Professional structure with subject line and formal greeting.</p>
+</div>
+<div class="h-6 w-6 rounded-full border-2 border-slate-300 dark:border-slate-600 peer-checked:border-primary flex items-center justify-center">
+<div class="h-3 w-3 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+</div>
+</div>
+</div>
+</label>
+<!-- Meeting Notes Card -->
+<label class="relative block cursor-pointer group">
+<input class="peer sr-only" name="output_type" type="radio" value="meeting_notes"/>
+<div class="p-5 rounded-xl border-2 border-slate-200 dark:border-white/5 bg-white dark:bg-surface-dark transition-all duration-200 group-hover:bg-slate-50 dark:group-hover:bg-card-dark/50 peer-checked:border-primary peer-checked:bg-primary/5 dark:peer-checked:bg-primary/10 shadow-sm">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 flex items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+<span class="material-icons-round text-3xl">event_note</span>
+</div>
+<div class="flex-1">
+<h3 class="font-bold text-lg mb-1">Meeting Notes</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Bulleted key points, decisions made, and clear action items.</p>
+</div>
+<div class="h-6 w-6 rounded-full border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center">
+<!-- Radio visually handled by peer-checked on parent div in CSS-like logic with Tailwind -->
+</div>
+</div>
+</div>
+</label>
+<!-- Message Card -->
+<label class="relative block cursor-pointer group">
+<input class="peer sr-only" name="output_type" type="radio" value="message"/>
+<div class="p-5 rounded-xl border-2 border-slate-200 dark:border-white/5 bg-white dark:bg-surface-dark transition-all duration-200 group-hover:bg-slate-50 dark:group-hover:bg-card-dark/50 peer-checked:border-primary peer-checked:bg-primary/5 dark:peer-checked:bg-primary/10 shadow-sm">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 flex items-center justify-center rounded-lg bg-purple-500/10 text-purple-500 group-hover:scale-110 transition-transform">
+<span class="material-icons-round text-3xl">chat_bubble</span>
+</div>
+<div class="flex-1">
+<h3 class="font-bold text-lg mb-1">Quick Message</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Concise and casual summary for Slack, Teams, or SMS.</p>
+</div>
+<div class="h-6 w-6 rounded-full border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center">
+</div>
+</div>
+</div>
+</label>
+</div>
+<!-- Visual Decoration / AI Indicator -->
+<div class="mt-12 flex flex-col items-center justify-center opacity-40">
+<div class="flex gap-1 mb-2">
+<div class="w-1 h-1 bg-primary rounded-full"></div>
+<div class="w-1 h-1 bg-primary rounded-full"></div>
+<div class="w-1 h-1 bg-primary rounded-full"></div>
+</div>
+<p class="text-[10px] font-bold uppercase tracking-[0.2em] text-center">AI Powered Transformation</p>
+</div>
+</main>
+<!-- Fixed Bottom Action -->
+<footer class="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background-light dark:from-background-dark via-background-light dark:via-background-dark to-transparent pt-12">
+<div class="max-w-md mx-auto">
+<!-- This button is disabled until a selection is made - using pointer-events-none and opacity to simulate state -->
+<button class="w-full bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-500 font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-not-allowed">
+                Generate Final Output
+                <span class="material-icons-round text-xl">auto_awesome</span>
+</button>
+<p class="text-center text-[11px] mt-4 text-slate-400 dark:text-slate-500">
+                You can edit the AI output in the next step.
+            </p>
+</div>
+<!-- iOS Home Indicator Spacing -->
+<div class="h-4"></div>
+</footer>
+<!-- Style for radio selection state simulation without JS -->
+<style>
+        input[type="radio"]:checked + div {
+            border-color: #13ec5b !important;
+            background-color: rgba(19, 236, 91, 0.08) !important;
+        }
+        input[type="radio"]:checked + div .h-6 {
+            border-color: #13ec5b !important;
+            position: relative;
+        }
+        input[type="radio"]:checked + div .h-6::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background-color: #13ec5b;
+            border-radius: 9999px;
+            position: absolute;
+        }
+    </style>
+</body></html>
