@@ -14,7 +14,8 @@ import {
   BarChart3,
   Settings,
   ChevronRight,
-  LayoutGrid
+  LayoutGrid,
+  User
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -67,16 +68,12 @@ export default function HomePage() {
             <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic text-slate-900">VoiceFlow</h1>
           </div>
 
-          <div className="flex items-center gap-12 lg:gap-16">
+          <div className="flex items-center gap-8 lg:gap-10">
             <Link href="/" className="text-lg lg:text-xl font-black text-noiz-primary tracking-wide relative after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[2px] after:bg-noiz-primary">Home</Link>
             <Link href="/knowledge" className="text-lg lg:text-xl font-bold text-slate-500 hover:text-slate-900 transition-all tracking-wide">Library</Link>
             <Link href="/templates" className="text-lg lg:text-xl font-bold text-slate-500 hover:text-slate-900 transition-all tracking-wide">Templates</Link>
-            <div className="h-12 w-12 lg:h-14 lg:w-14 rounded-2xl border-2 border-slate-100 p-1 bg-white shadow-xl overflow-hidden hover:border-noiz-primary transition-all cursor-pointer">
-              <img 
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${sessionId}`} 
-                alt="User Profile" 
-                className="rounded-xl object-cover h-full w-full scale-110"
-              />
+            <div className="h-10 w-10 lg:h-12 lg:w-12 rounded-2xl border border-slate-100 bg-white shadow-md flex items-center justify-center hover:border-noiz-primary transition-all cursor-pointer">
+              <User className="w-5 h-5 text-slate-400" />
             </div>
           </div>
         </div>
@@ -91,12 +88,8 @@ export default function HomePage() {
             </div>
             <span className="font-black text-lg tracking-tighter uppercase italic text-slate-900">VF</span>
           </div>
-          <div className="h-10 w-10 rounded-xl border-2 border-slate-100 p-1 bg-white shadow-lg overflow-hidden">
-            <img 
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${sessionId}`} 
-              alt="User Profile" 
-              className="rounded-lg object-cover h-full w-full"
-            />
+          <div className="h-9 w-9 rounded-xl border border-slate-100 bg-white shadow-md flex items-center justify-center">
+            <User className="w-4 h-4 text-slate-400" />
           </div>
         </div>
       </header>

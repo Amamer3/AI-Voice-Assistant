@@ -48,7 +48,7 @@ export default function KnowledgeBase({ sessionId }: KnowledgeBaseProps) {
       id: '3',
       type: 'message',
       title: 'Slack Update: Brand Guidelines',
-      preview: 'Hey team! 👋 Just a quick reminder about the Q3 budget. We need those final numbers...',
+      preview: 'Hey team! Just a quick reminder about the Q3 budget. We need those final numbers...',
       createdAt: new Date(Date.now() - 172800000).toISOString(),
     }
   ])
