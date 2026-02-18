@@ -188,14 +188,14 @@ export default function HomePage() {
           <Link href="/" className="p-4 bg-noiz-primary/10 text-noiz-primary rounded-2xl">
             <Home className="w-6 h-6" />
           </Link>
+          <Link href="/recorder" className="p-4 text-slate-400 hover:text-noiz-primary transition-colors">
+            <Mic className="w-6 h-6" />
+          </Link>
           <Link href="/knowledge" className="p-4 text-slate-400 hover:text-noiz-primary transition-colors">
             <BookOpen className="w-6 h-6" />
           </Link>
           <Link href="/templates" className="p-4 text-slate-400 hover:text-noiz-primary transition-colors">
             <BarChart3 className="w-6 h-6" />
-          </Link>
-          <Link href="/settings" className="p-4 text-slate-400 hover:text-noiz-primary transition-colors">
-            <Settings className="w-6 h-6" />
           </Link>
         </div>
       </div>

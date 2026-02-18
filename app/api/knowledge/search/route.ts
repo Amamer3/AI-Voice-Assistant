@@ -14,6 +14,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json({
+        results: [],
+        query,
+      })
+    }
+
     // Generate embedding for the query
     const queryEmbedding = await embed({
       model: openai.embedding('text-embedding-3-small'),

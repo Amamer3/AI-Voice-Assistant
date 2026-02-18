@@ -82,6 +82,7 @@ export default function AppLayout({
         <main className="flex-1 overflow-auto bg-transparent">
           {children}
         </main>
+        <AIAssistant messages={aiMessages} setMessages={setAiMessages} />
       </div>
     </div>
   )

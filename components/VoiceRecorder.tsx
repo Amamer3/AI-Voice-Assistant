@@ -44,6 +44,7 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
   const [generatedOutput, setGeneratedOutput] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const liveRequestInFlightRef = useRef(false)
+  const lastLiveRequestRef = useRef(0)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -91,7 +92,7 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
         chunksRef.current.push(e.data)
         handleLiveChunk(e.data)
       }
-      
+
       mediaRecorder.start(1000)
       setIsRecording(true)
       setIsPaused(false)
@@ -108,14 +109,22 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
     }
   }
 
-  const handleLiveChunk = async (chunk: Blob) => {
+  const handleLiveChunk = async (_chunk: Blob) => {
     if (!isRecording || isPaused) return
+    const now = Date.now()
+    if (now - lastLiveRequestRef.current < 4000) return
     if (liveRequestInFlightRef.current) return
 
+    const availableChunks = [...chunksRef.current]
+    if (!availableChunks.length) return
+
+    const liveBlob = new Blob(availableChunks, { type: 'audio/webm' })
+
     liveRequestInFlightRef.current = true
+    lastLiveRequestRef.current = now
     try {
       const formData = new FormData()
-      formData.append('audio', chunk, 'live-chunk.webm')
+      formData.append('audio', liveBlob, 'live-chunk.webm')
       formData.append('sessionId', sessionId)
 
       const response = await fetch('/api/transcribe', {
@@ -133,8 +142,12 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
       if (!newText) return
 
       setRealtimeTranscript((prev) => {
-        if (!prev) return newText
+        if (!prev) {
+          setFinalTranscript(newText)
+          return newText
+        }
         const combined = `${prev} ${newText}`.replace(/\s+/g, ' ').trim()
+        setFinalTranscript(combined)
         return combined
       })
     } catch (error) {

@@ -112,6 +112,38 @@ export default function KnowledgeBase({ sessionId }: KnowledgeBaseProps) {
     }
   }
 
+  const handleSearch = async () => {
+    const trimmed = searchQuery.trim()
+    if (!trimmed) {
+      setSearchResults([])
+      return
+    }
+    setIsSearching(true)
+    setErrorMessage('')
+    try {
+      const response = await fetch('/api/knowledge/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sessionId, query: trimmed }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Search failed')
+      }
+
+      const data = await response.json()
+      setSearchResults(data.results || [])
+    } catch (error) {
+      console.error('Error searching knowledge base:', error)
+      setErrorMessage('Failed to search your knowledge base. Please try again.')
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
   return (
     <div className="max-w-5xl lg:max-w-7xl 2xl:max-w-[1600px] mx-auto space-y-8 px-4 py-8 lg:py-12">
       {errorMessage && (
@@ -142,14 +174,32 @@ export default function KnowledgeBase({ sessionId }: KnowledgeBaseProps) {
         <div className="flex gap-3">
           <div className="relative flex-1 md:w-64 lg:w-80 2xl:w-96">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Search library..." 
+            <input
+              type="text"
+              placeholder="Search library..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleSearch()
+                }
+              }}
               className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-noiz-primary/20 transition-all md:text-lg"
             />
           </div>
-          <Button variant="outline" size="icon" className="rounded-2xl border-slate-200 bg-white h-12 w-12 md:h-14 md:w-14 hover:bg-slate-50 hover:border-noiz-primary/30">
-            <Filter className="w-5 h-5 md:w-6 md:h-6 text-slate-500" />
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-2xl border-slate-200 bg-white h-12 w-12 md:h-14 md:w-14 hover:bg-slate-50 hover:border-noiz-primary/30"
+            onClick={handleSearch}
+            disabled={isSearching}
+          >
+            {isSearching ? (
+              <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin text-noiz-primary" />
+            ) : (
+              <Filter className="w-5 h-5 md:w-6 md:h-6 text-slate-500" />
+            )}
           </Button>
         </div>
       </div>
@@ -237,9 +287,17 @@ export default function KnowledgeBase({ sessionId }: KnowledgeBaseProps) {
             </Button>
           </Card>
 
-          {items.length > 0 ? (
+          {searchQuery.trim() && searchResults.length === 0 && !isSearching ? (
+            <div className="py-10 text-center">
+              <p className="text-slate-400 text-base md:text-lg font-medium">
+                No results found for "{searchQuery.trim()}". Try a different search.
+              </p>
+            </div>
+          ) : null}
+
+          {(searchResults.length > 0 ? searchResults : items).length > 0 ? (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              {items.map((item) => (
+              {(searchResults.length > 0 ? searchResults : items).map((item) => (
                 <Card key={item.id} className="p-8 md:p-10 bg-white border-slate-100 hover:border-noiz-primary/20 transition-all rounded-[2.5rem] group shadow-sm">
                   <div className="flex items-start justify-between gap-6">
                     <div className="flex-1 space-y-3">
