@@ -59,7 +59,7 @@ export default function HomePage() {
       <main className="flex-grow flex flex-col items-center justify-center px-6 py-12 md:py-24 2xl:py-32 relative z-10">
         <div className="relative flex flex-col items-center">
           <div className="text-center mb-10 md:mb-16 space-y-3 max-w-3xl px-4">
-            <div className="w-full max-w-3xl mx-auto">
+            <div className="w-full max-w-3xl mx-auto pt-12 ">
               <TextPressure
                 text="AI-Powered Voice Assistant"
                 className="text-2xl md:text-4xl 2xl:text-5xl font-black tracking-tighter leading-tight"
@@ -86,11 +86,11 @@ export default function HomePage() {
                     Browse Templates
                   </Button>
                 </Link>
-                <Link href="/knowledge">
+                {/* <Link href="/knowledge">
                   <Button variant="ghost" className="h-12 md:h-14 px-4 md:px-6 rounded-full text-slate-500 hover:text-noiz-primary hover:bg-noiz-primary/5 font-bold md:text-base">
                     View Library
                   </Button>
-                </Link>
+                </Link> */}
               </div>
               <div className="pt-3 flex flex-col items-center gap-2">
                 <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] md:text-xs font-semibold text-slate-400 uppercase tracking-[0.24em]">
@@ -246,6 +246,99 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      <section className="w-full max-w-[1800px] mx-auto px-6 md:px-8 pb-20 md:pb-24 relative z-10">
+        <div className="max-w-4xl mx-auto text-center mb-10 md:mb-12">
+          <p className="text-[11px] md:text-xs font-bold uppercase tracking-[0.28em] text-noiz-primary">
+            Simple workflow
+          </p>
+          <h3 className="mt-3 text-2xl md:text-3xl font-black tracking-tight text-slate-900">
+            Go from rough voice note to ready-to-send in minutes
+          </h3>
+          <p className="mt-3 text-sm md:text-base text-slate-500 leading-relaxed">
+            Record once, then reuse the same thoughts as emails, updates, tickets, and more without rewriting
+            everything from scratch.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          <Card className="rounded-3xl border-slate-100 bg-white shadow-md shadow-slate-200/40 p-6 flex flex-col gap-3">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-noiz-primary/10 text-noiz-primary text-xs font-black">
+              1
+            </span>
+            <h4 className="text-base md:text-lg font-black text-slate-900">Talk through what happened</h4>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Capture decisions, context, and next steps out loud while everything is still fresh in your head.
+            </p>
+          </Card>
+          <Card className="rounded-3xl border-slate-100 bg-white shadow-md shadow-slate-200/40 p-6 flex flex-col gap-3">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-noiz-primary/10 text-noiz-primary text-xs font-black">
+              2
+            </span>
+            <h4 className="text-base md:text-lg font-black text-slate-900">Let the AI clean it up</h4>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Turn the transcript into clear structure: bullet points, sections, and actions tailored to your use case.
+            </p>
+          </Card>
+          <Card className="rounded-3xl border-slate-100 bg-white shadow-md shadow-slate-200/40 p-6 flex flex-col gap-3">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-noiz-primary/10 text-noiz-primary text-xs font-black">
+              3
+            </span>
+            <h4 className="text-base md:text-lg font-black text-slate-900">Export where you work</h4>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Copy results into email, docs, tickets, or chat so everyone gets the same crisp summary.
+            </p>
+          </Card>
+        </div>
+      </section>
+
+      <section className="w-full max-w-[1800px] mx-auto px-6 md:px-8 pb-28 md:pb-32 relative z-10">
+        <div className="max-w-4xl mx-auto text-center mb-10 md:mb-12">
+          <p className="text-[11px] md:text-xs font-bold uppercase tracking-[0.28em] text-noiz-primary">
+            Questions, answered
+          </p>
+          <h3 className="mt-3 text-2xl md:text-3xl font-black tracking-tight text-slate-900">
+            Built for people who care about clarity and control
+          </h3>
+        </div>
+        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 text-left">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm shadow-slate-200/40 p-5 md:p-6">
+            <h4 className="text-sm md:text-base font-black text-slate-900 mb-1.5">
+              What makes this different from a generic AI chatbot?
+            </h4>
+            <p className="text-sm md:text-base text-slate-500 leading-relaxed">
+              VoiceFlow is tuned for turning spoken thoughts into finished outputs. It keeps structure, decisions,
+              and tone instead of giving you a one-off reply that is hard to reuse.
+            </p>
+          </div>
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm shadow-slate-200/40 p-5 md:p-6">
+            <h4 className="text-sm md:text-base font-black text-slate-900 mb-1.5">
+              Do I need to clean up my speech for it to work?
+            </h4>
+            <p className="text-sm md:text-base text-slate-500 leading-relaxed">
+              No. Speak the way you normally do. The system is designed to handle pauses, restarts, and half-finished
+              sentences while keeping the important parts.
+            </p>
+          </div>
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm shadow-slate-200/40 p-5 md:p-6">
+            <h4 className="text-sm md:text-base font-black text-slate-900 mb-1.5">
+              Can I keep everything private on my device?
+            </h4>
+            <p className="text-sm md:text-base text-slate-500 leading-relaxed">
+              Yes. Use the local processing mode in the recorder when you want audio to stay in your browser and skip
+              cloud features.
+            </p>
+          </div>
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm shadow-slate-200/40 p-5 md:p-6">
+            <h4 className="text-sm md:text-base font-black text-slate-900 mb-1.5">
+              Who is this best suited for?
+            </h4>
+            <p className="text-sm md:text-base text-slate-500 leading-relaxed">
+              People who speak more than they type: founders, managers, ICs, and anyone who wants crisp updates without
+              staring at a blank document.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Modern Mobile Bottom Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-6 pb-8">
