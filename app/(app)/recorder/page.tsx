@@ -10,14 +10,14 @@ export default function RecorderPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center min-h-[60vh] px-6">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-full bg-white p-6 lg:p-10">
+    <div className="min-h-full bg-white p-4 sm:p-6 lg:p-10">
       <div className="max-w-5xl mx-auto mb-6 space-y-3">
         <Link
           href="/"

@@ -56,10 +56,10 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="flex-grow flex flex-col items-center justify-center px-6 py-12 md:py-24 2xl:py-32 relative z-10">
+      <main className="flex-grow flex flex-col items-center justify-center px-6 py-10 md:py-20 2xl:py-32 relative z-10">
         <div className="relative flex flex-col items-center">
           <div className="text-center mb-10 md:mb-16 space-y-3 max-w-3xl px-4">
-            <div className="w-full max-w-3xl mx-auto pt-12 ">
+            <div className="w-full max-w-3xl mx-auto pt-6 md:pt-12">
               <TextPressure
                 text="AI-Powered Voice Assistant"
                 className="text-2xl md:text-4xl 2xl:text-5xl font-black tracking-tighter leading-tight"
