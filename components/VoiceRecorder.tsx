@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Mic, Square, Play, Download, Trash2, Loader2, Pause, Bookmark, ChevronRight, ChevronDown, RotateCcw, Check, X, Wand2, Mail, FileText, MessageSquare, Sparkles, ArrowLeft } from 'lucide-react'
+import { Mic, Square, Play, Download, Trash2, Loader2, Pause, Bookmark, ChevronRight, ChevronDown, RotateCcw, Check, X, Wand2, Mail, FileText, MessageSquare, Sparkles, ArrowLeft, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -46,6 +46,9 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
   const [recipientName, setRecipientName] = useState('')
   const [recipientEmail, setRecipientEmail] = useState('')
   const [emailSubject, setEmailSubject] = useState('')
+  const [hasMicConsent, setHasMicConsent] = useState(false)
+  const [showConsent, setShowConsent] = useState(false)
+  const [localProcessingOnly, setLocalProcessingOnly] = useState(false)
   const liveRequestInFlightRef = useRef(false)
   const lastLiveRequestRef = useRef(0)
   const liveErrorRef = useRef(false)
@@ -58,8 +61,45 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
   const audioContextRef = useRef<AudioContext | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
   const [audioLevel, setAudioLevel] = useState(0)
+  const [history, setHistory] = useState<Array<{ id: string; transcript: string; createdAt: number }>>([])
 
-  // Audio visualization logic
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const consent = window.localStorage.getItem('mic-consent-v1')
+    if (consent === 'granted') {
+      setHasMicConsent(true)
+    }
+    const storedLocal = window.localStorage.getItem('local-processing-only')
+    if (storedLocal === 'true') {
+      setLocalProcessingOnly(true)
+    }
+    const storedHistory = window.localStorage.getItem('vf-history-v1')
+    if (storedHistory) {
+      try {
+        const parsed = JSON.parse(storedHistory) as Array<{ id: string; transcript: string; createdAt: number }>
+        if (Array.isArray(parsed)) {
+          setHistory(parsed)
+        }
+      } catch {
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('mic-consent-v1', hasMicConsent ? 'granted' : 'not-granted')
+  }, [hasMicConsent])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('local-processing-only', localProcessingOnly ? 'true' : 'false')
+  }, [localProcessingOnly])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('vf-history-v1', JSON.stringify(history))
+  }, [history])
+
   useEffect(() => {
     if (isRecording && !isPaused) {
       const updateLevel = () => {
@@ -152,6 +192,7 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
 
   const handleLiveChunk = async (_chunk: Blob) => {
     if (!isRecording || isPaused) return
+    if (localProcessingOnly) return
     if (liveErrorRef.current) return
     const now = Date.now()
     if (now - lastLiveRequestRef.current < 2500) return
@@ -246,6 +287,16 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
     setErrorMessage('')
   }
 
+  const addToHistory = (transcript: string) => {
+    const trimmed = transcript.trim()
+    if (!trimmed) return
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    setHistory((prev) => {
+      const next = [{ id, transcript: trimmed, createdAt: Date.now() }, ...prev]
+      return next.slice(0, 10)
+    })
+  }
+
   const processRecording = async (blob: Blob) => {
     setIsProcessing(true)
     try {
@@ -266,6 +317,7 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
       const transcriptText = data.transcript || ''
       setFinalTranscript(transcriptText)
       setRealtimeTranscript(transcriptText)
+      addToHistory(transcriptText)
     } catch (error) {
       console.error('Error during transcription:', error)
       setErrorMessage('Failed to transcribe your recording. You can still type or paste your text manually.')
@@ -283,21 +335,31 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
         if (activeRecording) {
           const finalRecording = { ...activeRecording, blob, duration }
-          setRecordings(prev => [...prev, finalRecording])
+          setRecordings((prev) => [...prev, finalRecording])
+        }
+        if (localProcessingOnly) {
+          const text = realtimeTranscript || finalTranscript
+          const safeText = text || ''
+          setFinalTranscript(safeText)
+          setRealtimeTranscript(safeText)
+          addToHistory(safeText)
+          setIsProcessing(false)
+          setCurrentStep('review')
+        } else if (activeRecording) {
           processRecording(blob)
         }
         chunksRef.current = []
       }
       mediaRecorderRef.current.stop()
     }
-    
+
     if (streamRef.current) streamRef.current.getTracks().forEach((track) => track.stop())
     if (speechRecognitionRef.current) {
       speechRecognitionRef.current.stop()
       speechRecognitionRef.current = null
     }
     if (timerRef.current) clearInterval(timerRef.current)
-    
+
     setIsRecording(false)
     setIsPaused(false)
   }
@@ -405,6 +467,25 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
     }
   }
 
+  const handleStartClick = () => {
+    setErrorMessage('')
+    if (!hasMicConsent) {
+      setShowConsent(true)
+      return
+    }
+    startRecording()
+  }
+
+  const handleConsentAccept = () => {
+    setHasMicConsent(true)
+    setShowConsent(false)
+    startRecording()
+  }
+
+  const handleConsentDecline = () => {
+    setShowConsent(false)
+  }
+
   const handleSendEmail = () => {
     if (selectedOutputType !== 'email') {
       setErrorMessage('You can only send emails from an email output.')
@@ -445,6 +526,35 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
 
   return (
     <div className="max-w-md md:max-w-xl lg:max-w-2xl mx-auto min-h-[600px] flex flex-col pb-20 relative">
+      {showConsent && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="max-w-sm w-full bg-white rounded-3xl p-6 md:p-8 shadow-2xl border border-slate-100">
+            <h2 className="text-lg md:text-xl font-black text-slate-900 mb-2">Microphone access</h2>
+            <p className="text-sm md:text-base text-slate-600 mb-4">
+              This app needs permission to use your microphone to record your voice and turn it into text.
+            </p>
+            <p className="text-xs md:text-sm text-slate-500 mb-6">
+              Your recording is used to generate emails, meeting notes, and messages. You can switch to local-only processing if you prefer more privacy.
+            </p>
+            <div className="flex flex-col md:flex-row gap-3">
+              <button
+                type="button"
+                onClick={handleConsentDecline}
+                className="flex-1 h-10 md:h-11 rounded-xl border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 text-sm font-semibold"
+              >
+                Not now
+              </button>
+              <button
+                type="button"
+                onClick={handleConsentAccept}
+                className="flex-1 h-10 md:h-11 rounded-xl bg-noiz-primary text-white hover:bg-noiz-primary/90 text-sm font-semibold"
+              >
+                Allow microphone
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {errorMessage && (
         <div className="mb-4 rounded-2xl bg-red-50 border border-red-100 text-red-700 text-sm px-4 py-3 flex items-start justify-between gap-3">
           <span className="flex-1">{errorMessage}</span>
@@ -474,7 +584,12 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
         <div className="flex-1 flex flex-col items-center justify-center space-y-12 animate-in fade-in slide-in-from-bottom-4 py-8 md:py-16">
           <div className="text-center space-y-3">
             <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">VoiceFlow</h1>
-            <p className="text-slate-500 max-w-[280px] md:max-w-md mx-auto font-medium text-sm md:text-base">Transform your voice into professional output instantly.</p>
+            <p className="text-slate-500 max-w-[280px] md:max-w-md mx-auto font-medium text-sm md:text-base">
+              Turn quick voice notes into polished emails, meeting notes, and messages.
+            </p>
+            <p className="text-slate-400 max-w-[320px] md:max-w-lg mx-auto text-xs md:text-sm">
+              Tap the mic to start recording. Your voice will be transcribed to text.
+            </p>
           </div>
 
           <div className="relative flex flex-col items-center">
@@ -483,8 +598,9 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
             <div className="absolute inset-0 bg-noiz-primary/10 rounded-full animate-pulse scale-[1.3] md:scale-[1.6] opacity-30" />
             
             <button 
-              onClick={startRecording}
-              className="relative z-10 w-40 h-40 md:w-56 md:h-56 bg-noiz-primary rounded-full flex flex-col items-center justify-center gap-3 text-white shadow-[0_0_50px_rgba(124,58,237,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 group border-8 border-white"
+              onClick={handleStartClick}
+              aria-label="Start recording. Your voice will be transcribed to text."
+              className="relative z-10 w-40 h-40 md:w-56 md:h-56 bg-noiz-primary rounded-full flex flex-col items-center justify-center gap-3 text-white shadow-[0_0_50px_rgba(254,101,93,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 group border-8 border-white"
             >
               <Mic className="w-14 h-14 md:w-20 md:h-20 group-hover:scale-110 transition-transform" />
               <span className="text-[10px] md:text-xs font-black tracking-[0.3em] uppercase">Start</span>
@@ -496,12 +612,60 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
             <Badge variant="outline" className="px-4 py-1.5 md:px-6 md:py-2 md:text-sm font-bold border-slate-200 bg-slate-50 text-noiz-primary">Notes</Badge>
             <Badge variant="outline" className="px-4 py-1.5 md:px-6 md:py-2 md:text-sm font-bold border-slate-200 bg-slate-50 text-noiz-primary">Message</Badge>
           </div>
+
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <div className="inline-flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setLocalProcessingOnly((prev) => !prev)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 bg-white text-xs md:text-sm text-slate-600 hover:border-noiz-primary/50 hover:text-noiz-primary transition-colors"
+                role="switch"
+                aria-checked={localProcessingOnly}
+              >
+                <span
+                  className={`inline-flex h-4 w-8 rounded-full items-center ${
+                    localProcessingOnly ? 'bg-noiz-primary' : 'bg-slate-300'
+                  }`}
+                >
+                  <span
+                    className={`h-3 w-3 rounded-full bg-white transform transition-transform ${
+                      localProcessingOnly ? 'translate-x-4' : 'translate-x-1'
+                    }`}
+                  />
+                </span>
+                <span>{localProcessingOnly ? 'Local processing only' : 'Cloud AI processing'}</span>
+              </button>
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-slate-200 bg-white text-slate-400 hover:text-noiz-primary hover:border-noiz-primary/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-noiz-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                  aria-label="What does local processing only mean?"
+                  aria-describedby="local-processing-info-tooltip"
+                >
+                  <Info className="w-4 h-4" />
+                </button>
+                <div
+                  id="local-processing-info-tooltip"
+                  className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-2xl bg-slate-900 px-3 py-2 text-xs text-slate-50 shadow-xl opacity-0 scale-95 translate-y-1 group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:scale-100 group-focus-within:translate-y-0 transition-all duration-150"
+                >
+                  <div className="font-semibold mb-1">
+                    {localProcessingOnly ? 'Local processing only' : 'Cloud AI processing'}
+                  </div>
+                  <p className="text-[11px] leading-snug text-slate-200">
+                    {localProcessingOnly
+                      ? 'Your audio stays in this browser and is not sent to our servers. This maximizes privacy but may limit some advanced AI features.'
+                      : 'Your audio is securely sent to our servers so more powerful AI models can process it. This enables higher quality transcription and outputs.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Recording State */}
       {currentStep === 'recording' && (
-        <div className="flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-300 border border-slate-100">
+        <div className="flex-1 flex flex-col relative animate-in zoom-in-95 duration-300">
           {/* Background Decorative Elements */}
           <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
             <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-noiz-primary/5 blur-[120px]"></div>
@@ -511,7 +675,7 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
           <main className="flex flex-col h-full px-6 md:px-12 pb-12 pt-8 max-w-2xl mx-auto w-full relative">
             {/* Top Status & Timer */}
             <header className="flex flex-col items-center justify-center space-y-4 md:space-y-6 pt-4">
-              <div className="flex items-center space-x-2 bg-noiz-primary/10 px-3 py-1 md:px-5 md:py-2 rounded-full border border-noiz-primary/20">
+              <div className="flex items-center space-x-2 bg-noiz-primary/10 px-3 py-1 md:px-5 md:py-2 rounded-full border border-noiz-primary/20" role="status" aria-live="polite">
                 <span className={`flex h-2 w-2 md:h-3 md:w-3 rounded-full bg-noiz-primary ${!isPaused ? 'animate-pulse' : ''}`}></span>
                 <span className="text-xs md:text-sm font-bold uppercase tracking-widest text-noiz-primary">
                   {isPaused ? 'Paused' : 'Recording'}
@@ -523,7 +687,7 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
             </header>
 
             {/* Waveform Visualizer Section */}
-            <div className="flex-grow flex flex-col items-center justify-center relative my-8 md:my-16">
+            <div className="flex-grow flex flex-col items-center justify-center relative my-8 md:my-16" aria-hidden="true">
               {/* Glow Effect */}
               <div className="absolute inset-0 bg-noiz-primary/10 blur-[100px] rounded-full opacity-40"></div>
               {/* Fluid Waveform Visualization */}
@@ -535,7 +699,7 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
                     style={{ 
                       height: isPaused ? '8px' : `${20 + Math.random() * (audioLevel * 100 + 20)}%`,
                       opacity: 0.3 + (Math.sin(i * 0.5) * 0.2),
-                      boxShadow: !isPaused ? '0 0 15px rgba(124,58,237,0.3)' : 'none'
+                      boxShadow: !isPaused ? '0 0 15px rgba(254,101,93,0.3)' : 'none'
                     }}
                   />
                 ))}
@@ -567,6 +731,7 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
               {/* Cancel Button */}
               <button 
                 onClick={cancelRecording}
+                aria-label="Cancel recording and discard this session"
                 className="group flex flex-col items-center space-y-2 focus:outline-none"
               >
                 <div className="w-14 h-14 md:w-20 md:h-20 rounded-full flex items-center justify-center bg-slate-50 border border-slate-100 group-active:scale-95 transition-transform hover:bg-slate-100">
@@ -578,6 +743,7 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
               {/* Finish Session Button (Primary Action) */}
               <button 
                 onClick={stopRecording}
+                aria-label="Stop recording and review transcript"
                 className="relative group focus:outline-none"
               >
                 <div className="absolute -inset-4 bg-red-500/20 rounded-full blur-xl group-active:opacity-100 transition-opacity"></div>
@@ -590,6 +756,7 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
               {/* Pause/Resume Button */}
               <button 
                 onClick={togglePause}
+                aria-label={isPaused ? 'Resume recording' : 'Pause recording'}
                 className="group flex flex-col items-center space-y-2 focus:outline-none"
               >
                 <div className="w-14 h-14 md:w-20 md:h-20 rounded-full flex items-center justify-center bg-noiz-primary/10 border border-noiz-primary/20 group-active:scale-95 transition-transform hover:bg-noiz-primary/20">
@@ -610,17 +777,18 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
 
       {/* Post-Recording Review */}
       {currentStep === 'review' && (
-        <div className="flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 animate-in slide-in-from-right-4 duration-300">
+        <div className="flex-1 flex flex-col animate-in slide-in-from-right-4 duration-300">
           <div className="p-8 md:p-12 flex-1 flex flex-col space-y-6 md:space-y-8">
             <h2 className="text-2xl md:text-4xl font-black text-slate-900">Review Transcript</h2>
             
-            <div className="flex-1 bg-slate-50 rounded-2xl md:rounded-[2rem] p-6 md:p-10 border border-slate-100 overflow-y-auto">
-                  <textarea 
-                    className="w-full h-full bg-transparent border-none focus:ring-0 text-slate-700 leading-relaxed resize-none text-base md:text-xl"
-                    value={finalTranscript}
-                    onChange={(e) => setFinalTranscript(e.target.value)}
-                    placeholder="Your transcript will appear here. You can edit it before generating an output."
-                  />
+            <div className="flex-1">
+              <textarea 
+                className="w-full min-h-[140px] md:min-h-[200px] bg-white border border-slate-200 rounded-2xl md:rounded-[2rem] px-4 md:px-6 py-3 md:py-4 focus:outline-none focus:ring-2 focus:ring-noiz-primary/20 text-slate-700 leading-relaxed resize-none text-base md:text-xl"
+                rows={6}
+                value={finalTranscript}
+                onChange={(e) => setFinalTranscript(e.target.value)}
+                placeholder="Your transcript will appear here. You can edit it before generating an output."
+              />
             </div>
 
             <div className="flex gap-4">
@@ -639,7 +807,7 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
 
       {/* Output Selection */}
       {currentStep === 'output_selection' && (
-        <div className="flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 animate-in slide-in-from-right-4 duration-300">
+        <div className="flex-1 flex flex-col animate-in slide-in-from-right-4 duration-300">
           <div className="p-6 md:p-12 flex-1 flex flex-col space-y-6 md:space-y-8">
             {/* Header with Progress */}
             <div className="flex items-center justify-between w-full mb-2">
@@ -690,9 +858,33 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
 
             <div className="grid grid-cols-1 gap-4">
               {[
-                { id: 'email', title: 'Email Draft', desc: 'Professional structure with subject line and formal greeting.', icon: Mail, color: 'text-noiz-primary', bg: 'bg-noiz-primary/10' },
-                { id: 'meeting_notes', title: 'Meeting Notes', desc: 'Bulleted key points, decisions made, and clear action items.', icon: FileText, color: 'text-noiz-accent', bg: 'bg-noiz-accent/10' },
-                { id: 'message', title: 'Quick Message', desc: 'Concise and casual summary for Slack, Teams, or SMS.', icon: MessageSquare, color: 'text-noiz-secondary', bg: 'bg-noiz-secondary/10' }
+                {
+                  id: 'email',
+                  title: 'Email Draft',
+                  desc: 'Professional structure with subject line and formal greeting.',
+                  sample: 'Subject: Follow-up on our call\nHi [Name],\nThanks again for taking the time today...',
+                  icon: Mail,
+                  color: 'text-noiz-primary',
+                  bg: 'bg-noiz-primary/10',
+                },
+                {
+                  id: 'meeting_notes',
+                  title: 'Meeting Notes',
+                  desc: 'Bulleted key points, decisions made, and clear action items.',
+                  sample: '• Agenda review\n• Decisions made\n• Action items with owners and due dates',
+                  icon: FileText,
+                  color: 'text-noiz-accent',
+                  bg: 'bg-noiz-accent/10',
+                },
+                {
+                  id: 'message',
+                  title: 'Quick Message',
+                  desc: 'Concise and casual summary for Slack, Teams, or SMS.',
+                  sample: '"Quick update from my call:\n– Main decision\n– Next deadline\n– Who is doing what"',
+                  icon: MessageSquare,
+                  color: 'text-noiz-secondary',
+                  bg: 'bg-noiz-secondary/10',
+                },
               ].map((item) => (
                 <button
                   key={item.id}
@@ -705,6 +897,11 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
                   <div className="flex-1">
                     <h3 className="text-lg md:text-2xl font-black text-slate-900 mb-1">{item.title}</h3>
                     <p className="text-slate-500 text-sm md:text-base font-medium leading-relaxed">{item.desc}</p>
+                    {item.sample && (
+                      <div className="mt-3 px-3 py-2 rounded-xl bg-white/80 border border-slate-100 text-[11px] md:text-xs text-slate-500 font-mono leading-snug">
+                        {item.sample}
+                      </div>
+                    )}
                     {item.id === 'email' && (
                       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                         <input
@@ -788,6 +985,35 @@ export default function VoiceRecorder({ sessionId }: VoiceRecorderProps) {
                 Save to Library
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {history.length > 0 && currentStep !== 'recording' && (
+        <div className="mt-6 space-y-2">
+          <h3 className="text-xs font-bold tracking-[0.24em] uppercase text-slate-400">
+            Previous recordings
+          </h3>
+          <div className="space-y-2">
+            {history.slice(0, 5).map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                onClick={() => {
+                  setFinalTranscript(entry.transcript)
+                  setRealtimeTranscript(entry.transcript)
+                  setCurrentStep('review')
+                }}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-slate-100 bg-white hover:bg-slate-50 text-left transition-colors"
+              >
+                <span className="text-sm font-medium text-slate-700 truncate">
+                  {entry.transcript.slice(0, 80) || 'Empty transcript'}
+                </span>
+                <span className="ml-4 text-[10px] font-bold uppercase tracking-wider text-noiz-primary">
+                  Reuse
+                </span>
+              </button>
+            ))}
           </div>
         </div>
       )}

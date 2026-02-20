@@ -13,31 +13,27 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useSession } from '@/hooks/use-session'
+import BlurText from '@/components/BlurText'
+import TextPressure from '@/components/TextPressure'
 
 export default function HomePage() {
   const { sessionId } = useSession()
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans text-slate-900 overflow-x-hidden relative">
-      {/* Premium background effects */}
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(254,101,93,0.06),transparent_50%)] pointer-events-none" />
-      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-noiz-primary/5 blur-[120px] rounded-full pointer-events-none" />
-      <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-noiz-secondary/5 blur-[120px] rounded-full pointer-events-none" />
-
-      {/* Desktop Top Navigation */}
-      <nav className="hidden md:flex h-20 md:h-28 border-b border-slate-100 bg-white/80 backdrop-blur-2xl px-8 items-center justify-center sticky top-0 z-50 transition-all duration-300">
-        <div className="w-full max-w-[1800px] flex items-center justify-between">
-          <div className="flex items-center gap-4 group cursor-pointer">
-            <div className="w-12 h-12 md:w-14 md:h-14 bg-noiz-primary rounded-2xl flex items-center justify-center shadow-lg shadow-noiz-primary/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-              <Mic className="w-7 h-7 md:w-8 md:h-8 text-white" />
+    <div className="min-h-screen bg-[#F1F5F9] flex flex-col font-sans text-slate-900 overflow-x-hidden relative">
+      <nav className="hidden md:flex fixed top-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-5xl px-4 transition-all duration-300">
+        <div className="w-full flex items-center justify-between rounded-full bg-white/10 backdrop-blur-xl border border-white/25 ring-1 ring-white/10 shadow-[0_18px_60px_rgba(15,23,42,0.65)] px-6 py-3">
+          <div className="flex items-center gap-3 group cursor-pointer">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-noiz-primary rounded-2xl flex items-center justify-center shadow-lg shadow-noiz-primary/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+              <Mic className="w-6 h-6 md:w-7 md:h-7 text-white" />
             </div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic text-slate-900">VoiceFlow</h1>
+            <h1 className="text-xl md:text-2xl font-black tracking-tighter uppercase italic text-slate-900">VoiceFlow</h1>
           </div>
 
           <div className="flex items-center gap-8 lg:gap-10">
-            <Link href="/" className="text-lg lg:text-xl font-black text-noiz-primary tracking-wide relative after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[2px] after:bg-noiz-primary">Home</Link>
-            <Link href="/knowledge" className="text-lg lg:text-xl font-bold text-slate-500 hover:text-slate-900 transition-all tracking-wide">Library</Link>
-            <Link href="/templates" className="text-lg lg:text-xl font-bold text-slate-500 hover:text-slate-900 transition-all tracking-wide">Templates</Link>
+            <Link href="/" className="text-base lg:text-lg font-black text-noiz-primary tracking-wide relative after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[2px] after:bg-noiz-primary">Home</Link>
+            <Link href="/knowledge" className="text-base lg:text-lg font-bold text-slate-500 hover:text-slate-900 transition-all tracking-wide">Library</Link>
+            <Link href="/templates" className="text-base lg:text-lg font-bold text-slate-500 hover:text-slate-900 transition-all tracking-wide">Templates</Link>
             <div className="h-10 w-10 lg:h-12 lg:w-12 rounded-2xl border border-slate-100 bg-white shadow-md flex items-center justify-center hover:border-noiz-primary transition-all cursor-pointer">
               <User className="w-5 h-5 text-slate-400" />
             </div>
@@ -62,19 +58,25 @@ export default function HomePage() {
 
       <main className="flex-grow flex flex-col items-center justify-center px-6 py-12 md:py-24 2xl:py-32 relative z-10">
         <div className="relative flex flex-col items-center">
-          <div className="text-center mb-10 md:mb-16 space-y-3 max-w-4xl px-4">
-            <h2 className="text-3xl md:text-5xl 2xl:text-6xl font-black text-slate-900 tracking-tighter leading-tight uppercase">
-              AI-Powered <span className="text-noiz-primary">Voice Assistant</span>
-            </h2>
-            <h3 className="text-xl md:text-3xl 2xl:text-4xl font-black text-slate-400 italic tracking-tight">
-              Your Voice, Professional Output
-            </h3>
-            <p className="text-slate-500 text-sm md:text-lg 2xl:text-xl font-medium max-w-2xl mx-auto leading-relaxed pt-3">
-              Transform voice notes into polished emails, meeting minutes, and messages. Just speak — we'll handle the rest.
+          <div className="text-center mb-10 md:mb-16 space-y-3 max-w-3xl px-4">
+            <div className="w-full max-w-3xl mx-auto">
+              <TextPressure
+                text="AI-Powered Voice Assistant"
+                className="text-2xl md:text-4xl 2xl:text-5xl font-black tracking-tighter leading-tight"
+                textColor="#0f172a"
+                minFontSize={18}
+              />
+            </div>
+            <BlurText
+              text="Your Voice, Professional Output"
+              className="text-lg md:text-2xl 2xl:text-3xl font-black text-slate-400 italic tracking-tight"
+            />
+            <p className="text-slate-500 text-sm md:text-base 2xl:text-lg font-medium max-w-2xl mx-auto leading-relaxed pt-3">
+              Transform voice notes into polished emails, meeting minutes, and messages. Just speak — the assistant handles structure and wording for you.
             </p>
             <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 pt-4">
               <Link href="/recorder">
-                <Button className="h-12 md:h-14 px-8 md:px-10 rounded-full bg-noiz-primary text-white hover:bg-noiz-primary/90 font-black md:text-lg shadow-lg shadow-noiz-primary/30">
+                <Button className="h-11 md:h-12 px-7 md:px-9 rounded-full bg-noiz-primary text-white hover:bg-noiz-primary/90 font-black text-sm md:text-base shadow-lg shadow-noiz-primary/30">
                   Start Recording
                 </Button>
               </Link>
@@ -89,6 +91,25 @@ export default function HomePage() {
                     View Library
                   </Button>
                 </Link>
+              </div>
+              <div className="pt-3 flex flex-col items-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] md:text-xs font-semibold text-slate-400 uppercase tracking-[0.24em]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-noiz-primary" />
+                    Step 1 Record
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-noiz-primary" />
+                    Step 2 Review
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-noiz-primary" />
+                    Step 3 Choose output
+                  </span>
+                </div>
+                <p className="text-[11px] md:text-xs text-slate-400">
+                  You control where audio is processed. Switch between local and cloud modes in the recorder.
+                </p>
               </div>
             </div>
           </div>
@@ -107,7 +128,7 @@ export default function HomePage() {
               </div>
               
               <div className="flex flex-col items-center gap-1.5 text-center">
-                <span className="text-noiz-primary font-black text-2xl md:text-3xl animate-pulse tracking-tighter">TAP</span>
+                <span className="text-noiz-primary font-black text-xl md:text-2xl animate-pulse tracking-tighter">TAP</span>
                 <span className="text-slate-400 font-bold text-xs md:text-sm uppercase tracking-[0.3em]">Tap to start recording your voice note</span>
               </div>
             </Link>
@@ -115,7 +136,52 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* Quick Actions & Recent Activity */}
+      <section className="w-full max-w-[1800px] mx-auto px-6 md:px-8 pb-16 md:pb-20 relative z-10">
+        <div className="max-w-3xl mx-auto text-center mb-10 md:mb-14">
+          <p className="text-[11px] md:text-xs font-bold uppercase tracking-[0.28em] text-noiz-primary">
+            Built for real workflows
+          </p>
+          <h3 className="mt-3 text-2xl md:text-3xl font-black tracking-tight text-slate-900">
+            Turn rough voice notes into clear, shareable updates
+          </h3>
+          <p className="mt-3 text-sm md:text-base text-slate-500 leading-relaxed">
+            Whether you are running meetings, building products, or journaling for yourself, the assistant
+            keeps everything structured and easy to reuse.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          <Card className="rounded-3xl border-slate-100 bg-white/90 shadow-md shadow-slate-200/40 p-6 flex flex-col gap-3">
+            <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-noiz-primary">
+              For busy days
+            </span>
+            <h3 className="text-lg md:text-xl font-black text-slate-900">Meetings that write themselves</h3>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Capture long conversations once and get clean email follow-ups, decision logs, and task lists without rewriting everything.
+            </p>
+          </Card>
+
+          <Card className="rounded-3xl border-slate-100 bg-white/90 shadow-md shadow-slate-200/40 p-6 flex flex-col gap-3">
+            <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-noiz-primary">
+              For makers
+            </span>
+            <h3 className="text-lg md:text-xl font-black text-slate-900">Talk through ideas, ship faster</h3>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Brain-dump features, specs, or updates out loud and turn them into polished status emails, release notes, or docs.
+            </p>
+          </Card>
+
+          <Card className="rounded-3xl border-slate-100 bg-white/90 shadow-md shadow-slate-200/40 p-6 flex flex-col gap-3">
+            <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-noiz-primary">
+              For personal notes
+            </span>
+            <h3 className="text-lg md:text-xl font-black text-slate-900">Clearer check-ins and reflections</h3>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Capture journals, self-check-ins, and reminders as voice notes and turn them into tidy summaries you can revisit later.
+            </p>
+          </Card>
+        </div>
+      </section>
+
       <div className="w-full max-w-[1800px] mx-auto px-6 md:px-8 pb-24 md:pb-28 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-8 md:gap-12 items-start">
           {/* Quick Actions */}
@@ -183,17 +249,33 @@ export default function HomePage() {
 
       {/* Modern Mobile Bottom Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-6 pb-8">
-        <div className="bg-white/90 backdrop-blur-2xl border border-slate-100 rounded-[32px] p-2 flex justify-around items-center shadow-2xl">
-          <Link href="/" className="p-4 bg-noiz-primary/10 text-noiz-primary rounded-2xl">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/25 ring-1 ring-white/10 rounded-[32px] p-2 flex justify-around items-center shadow-[0_18px_60px_rgba(15,23,42,0.65)]">
+          <Link
+            href="/"
+            className="p-4 bg-noiz-primary/10 text-noiz-primary rounded-2xl"
+            aria-label="Home"
+          >
             <Home className="w-6 h-6" />
           </Link>
-          <Link href="/recorder" className="p-4 text-slate-400 hover:text-noiz-primary transition-colors">
+          <Link
+            href="/recorder"
+            className="p-4 text-slate-400 hover:text-noiz-primary transition-colors"
+            aria-label="Recorder"
+          >
             <Mic className="w-6 h-6" />
           </Link>
-          <Link href="/knowledge" className="p-4 text-slate-400 hover:text-noiz-primary transition-colors">
+          <Link
+            href="/knowledge"
+            className="p-4 text-slate-400 hover:text-noiz-primary transition-colors"
+            aria-label="Library"
+          >
             <BookOpen className="w-6 h-6" />
           </Link>
-          <Link href="/templates" className="p-4 text-slate-400 hover:text-noiz-primary transition-colors">
+          <Link
+            href="/templates"
+            className="p-4 text-slate-400 hover:text-noiz-primary transition-colors"
+            aria-label="Templates"
+          >
             <BarChart3 className="w-6 h-6" />
           </Link>
         </div>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Mic, BookOpen, Loader2, LayoutGrid } from 'lucide-react'
+import { Mic, BookOpen, Loader2, Home, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/hooks/use-session'
 export default function AppLayout({
@@ -22,34 +22,93 @@ export default function AppLayout({
   }
 
   const navItems = [
+    { href: '/', label: 'Home', icon: Home },
     { href: '/recorder', label: 'Recorder', icon: Mic },
     { href: '/knowledge', label: 'Library', icon: BookOpen },
-    { href: '/templates', label: 'Templates', icon: LayoutGrid },
+    { href: '/templates', label: 'Templates', icon: BarChart3 },
   ]
 
   return (
     <div className="flex min-h-screen bg-white text-slate-900 flex-col font-sans">
 
-      {/* Bottom Navigation for Mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-6 flex items-center justify-around z-50">
-        {navItems.map((item) => {
-          const Icon = item.icon
-          const isActive = pathname === item.href
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center gap-1 transition-all duration-200 ${
-                isActive ? 'text-noiz-primary' : 'text-slate-400'
-              }`}
-            >
-              <div className={`p-2 rounded-xl ${isActive ? 'bg-noiz-primary/10' : ''}`}>
-                <Icon className="w-6 h-6" />
+      {/* Desktop Top Navigation (hidden on Recorder page) */}
+      {pathname !== '/recorder' && (
+        <nav className="hidden md:flex h-20 md:h-24 border-b border-slate-100 bg-white/80 backdrop-blur-2xl px-8 items-center justify-center sticky top-0 z-40">
+          <div className="w-full max-w-[1800px] flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/"
+                className="w-11 h-11 md:w-12 md:h-12 bg-noiz-primary rounded-2xl flex items-center justify-center shadow-lg shadow-noiz-primary/20"
+                aria-label="Go to home"
+              >
+                <Mic className="w-6 h-6 text-white" />
+              </Link>
+              <div className="flex flex-col">
+                <span className="text-sm font-bold tracking-[0.24em] uppercase text-slate-400">
+                  Voice assistant
+                </span>
+                <span className="text-lg md:text-xl font-black tracking-tight text-slate-900">
+                  VoiceFlow
+                </span>
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider">{item.label}</span>
-            </Link>
-          )
-        })}
+            </div>
+
+            <div className="flex items-center gap-6 lg:gap-8">
+              <Link
+                href="/recorder"
+                className={`text-sm lg:text-base font-semibold tracking-wide px-3 py-1.5 rounded-full transition-colors ${
+                  pathname === '/recorder'
+                    ? 'bg-noiz-primary/10 text-noiz-primary'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                Recorder
+              </Link>
+              <Link
+                href="/knowledge"
+                className={`text-sm lg:text-base font-semibold tracking-wide px-3 py-1.5 rounded-full transition-colors ${
+                  pathname === '/knowledge'
+                    ? 'bg-noiz-primary/10 text-noiz-primary'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                Library
+              </Link>
+              <Link
+                href="/templates"
+                className={`text-sm lg:text-base font-semibold tracking-wide px-3 py-1.5 rounded-full transition-colors ${
+                  pathname === '/templates'
+                    ? 'bg-noiz-primary/10 text-noiz-primary'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                Templates
+              </Link>
+            </div>
+          </div>
+        </nav>
+      )}
+
+      {/* Bottom Navigation for Mobile */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-6 pb-8">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/25 ring-1 ring-white/10 rounded-[32px] p-2 flex justify-around items-center shadow-[0_18px_60px_rgba(15,23,42,0.65)]">
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`p-4 rounded-2xl transition-colors ${
+                  isActive ? 'bg-noiz-primary/10 text-noiz-primary' : 'text-slate-400 hover:text-noiz-primary'
+                }`}
+                aria-label={item.label}
+              >
+                <Icon className="w-6 h-6" />
+              </Link>
+            )
+          })}
+        </div>
       </nav>
 
       {/* Main Content */}
